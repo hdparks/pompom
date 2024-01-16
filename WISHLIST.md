@@ -1,0 +1,3 @@
+- Pomodoro timer => pop up window 
+- display status of timer to window
+- auto-generate cringy names for each session 
