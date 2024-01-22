@@ -3,6 +3,7 @@ local Data = require("pompom.data")
 local Config = require('pompom.config')
 local List = require("pompom.list")
 local Timer = require("pompom.timer")
+local Logger = require("pompom.logger")
 
 --- @class PomPom
 --- @field config PomPomConfig
@@ -75,6 +76,7 @@ function PomPom:_for_each_list(cb)
 end
 
 function PomPom:sync()
+	Logger:log("pompom: syncing")
 	local key = self.config.settings.key()
 	self:_for_each_list(function(list, _, list_name)
 		if list.config.encode == false then
@@ -98,22 +100,36 @@ function PomPom:dump()
 	return self.data._data
 end
 
-local the_pompom = PomPom:new()
 
+--- @param self PomPom
 --- @param partial_config PomPomPartialConfig
 --- @return PomPom
-function PomPom:setup(partial_config)
-	if self ~= the_pompom then
-		---@diagnostic disable-next-line: cast-local-type
-		partial_config = self
-		self = the_pompom
-	end
+function PomPom.setup(self, partial_config)
 
 	self.config = Config.merge_config(partial_config, self.config)
 	self.ui:configure(self.config.settings)
+
+	vim.api.nvim_create_autocmd({ "BufLeave", "VimLeavePre" }, {
+            group = require("pompom.autocmd"),
+            pattern = "*",
+            callback = function(ev)
+                self:_for_each_list(function(list, config)
+                    local fn = config[ev.event]
+                    if fn ~= nil then
+                        fn(ev, list)
+                    end
+
+                    if ev.event == "VimLeavePre" then
+                        self:sync()
+                    end
+                end)
+            end,
+        })
 
 	return self
 end
 
 
+-- singleton pompom
+local the_pompom = PomPom:new()
 return the_pompom

@@ -1,10 +1,12 @@
 local Path = require("plenary.path")
+local Logger = require("pompom.logger")
 
 local data_path = vim.fn.stdpath("data")
 local full_data_path = string.format("%s/pompom.json",data_path)
 
 --- @param data any 
 local function write_data(data)
+	Logger:log("pompom.data: writing data")
 	Path:new(full_data_path):write(vim.json.encode(data), "w")
 end
 
@@ -50,21 +52,25 @@ Data.__index = Data
 
 --- @return PomPomRawData
 local function read_data()
+	Logger:log("pompom.data: reading data")
 	local path = Path:new(full_data_path)
 	local exists = path:exists()
 
 	if not exists then
+		Logger:log("pompom.data: no data found, initializing")
 		write_data({})
 	end
 
 	local out_data = path:read()
 
 	if not out_data or out_data == "" then
+		Logger:log("pompom.data: data empty, reinitializing")
 		write_data({})
 		out_data = path:read()
 	end
 
 	local data = vim.json.decode(out_data)
+	Logger:log("pompom.data:", data)
 	return data
 end
 
@@ -72,6 +78,7 @@ end
 --- @return PomPomData
 function Data:new()
 	local ok, data = pcall(read_data)
+	Logger:log("pompom.data: init", tostring(ok))
 	return setmetatable({
 		_data = data,
 		has_error = not ok,
@@ -120,11 +127,13 @@ function Data:update(key, name, values)
 end
 
 function Data:sync()
+	Logger:log("pompom.data: syncing data")
 	if self.has_error then
 		return
 	end
 
 	if not has_keys(self.seen) then
+		Logger:log("pompom.data: nothing seen, early out")
 		return
 	end
 

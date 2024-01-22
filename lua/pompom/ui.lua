@@ -102,6 +102,7 @@ function PomPomUI:_create_window(toggle_opts)
 		end,
 		function ()
 			-- TODO return true when the window is closed 
+			Logger:log("pompom.ui window-updater finished")
 			return true
 		end)
 

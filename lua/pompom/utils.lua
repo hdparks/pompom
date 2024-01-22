@@ -50,7 +50,6 @@ end
 function PomPomUtils.run_interval(ms, cb, cb_until)
 	local timer = vim.loop.new_timer()
 	timer:start(0, ms, vim.schedule_wrap(function()
-		print('on schedule!', cb, cb_until)
 		local success, done = pcall(cb_until)
 		-- if done or error, stop timer
 		if not success or done then
