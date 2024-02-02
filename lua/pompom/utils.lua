@@ -35,32 +35,10 @@ function PomPomUtils.remove_duplicate_whitespace(str)
 	return str:gsub("%s+"," ")
 end
 
-
-function PomPomUtils.run_timer(ms, cb)
-	local timer = vim.loop.new_timer()
-	timer:start(ms, 0, vim.schedule_wrap(function()
-		timer:stop()
-		cb()
-	end))
-end
-
---- @param ms number -- length of interval in ms
---- @param cb (fun()) -- callback: to be run each interval
---- @param cb_until (fun():boolean) -- callback: when true or error, stop interval
-function PomPomUtils.run_interval(ms, cb, cb_until)
-	local timer = vim.loop.new_timer()
-	timer:start(0, ms, vim.schedule_wrap(function()
-		local success, done = pcall(cb_until)
-		-- if done or error, stop timer
-		if not success or done then
-			timer:stop()
-		end
-		-- if error, throw
-		if not success then
-			error(done)
-		end
-		cb()
-	end))
+--- @param str string
+--- @return string
+function PomPomUtils.to_escaped_str(str)
+	return str:gsub("(%W)","%%%1")
 end
 
 return PomPomUtils

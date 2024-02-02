@@ -1,5 +1,6 @@
 local PomPomGroup = require("pompom.autocmd")
 local Logger = require("pompom.logger")
+local Task = require("pompom.task")
 local utils = require("pompom.utils")
 
 local PomPomBuffer = {}
@@ -10,13 +11,10 @@ local function get_pompom_menu_name()
 	return POMPOM_MENU
 end
 
---- @param key string
-function PomPomBuffer.run_toggle_command(key)
-	require('pompom').ui:toggle_quick_menu()
-end
 
 --- @param bufnr number
-function PomPomBuffer.setup_autocmds_and_keymaps(bufnr)
+--- @param ui PomPomUI
+function PomPomBuffer.setup_autocmds_and_keymaps(bufnr, ui)
 	local curr_file = vim.api.nvim_buf_get_name(0)
 	local cmd = string.format(
 		"autocmd Filetype pompom "
@@ -33,18 +31,17 @@ function PomPomBuffer.setup_autocmds_and_keymaps(bufnr)
 		buf = bufnr
 	})
 	vim.api.nvim_set_option_value("buftype","acwrite", { buf = bufnr })
-	vim.keymap.set("n","q", function() PomPomBuffer.run_toggle_command("q") end, {buffer=bufnr, silent=true})
-	vim.keymap.set("n","Esc", function() PomPomBuffer.run_toggle_command("Esc") end, {buffer=bufnr, silent=true})
-	vim.keymap.set("n","<leader>d", function() PomPomBuffer.toggle_line_status(bufnr, config) end, {buffer=bufnr, silent=true} )
-	-- TODO one to toggle list item done
-	-- TODO one to toggle list item active
+	vim.keymap.set("n","q", function() ui:close_menu() end, {buffer=bufnr, silent=true})
+	vim.keymap.set("n","Esc", function() ui:close_menu() end, {buffer=bufnr, silent=true})
+	-- TODO maybe this belongs in a separate config step somewhere else? At least it should if this ever gets shared
+	vim.keymap.set("n","<leader>d", function() PomPomBuffer.toggle_task_status(bufnr) end, {buffer=bufnr, silent=true} )
 	vim.api.nvim_create_autocmd({ "BufWriteCmd" }, {
 		group = PomPomGroup,
 		buffer = bufnr,
 		callback = function()
-			require("pompom").ui:save()
+			require("pompom").ui:save_contents()
 			vim.schedule(function()
-				require("pompom").ui:toggle_quick_menu()
+				ui:close_menu()
 			end)
 		end
 	})
@@ -52,40 +49,36 @@ function PomPomBuffer.setup_autocmds_and_keymaps(bufnr)
 		group = PomPomGroup,
 		buffer = bufnr,
 		callback = function()
-			PomPomBuffer.run_toggle_command(":q")
+			ui:close_menu()
 		end
 	})
 end
 
 --- @param bufnr number
-function PomPomBuffer.toggle_line_status(bufnr)
+function PomPomBuffer.toggle_task_status(bufnr)
 	local row, _ = unpack(vim.api.nvim_win_get_cursor(0))
 	row = row - 1 -- now it's zero-based line index
 	Logger:log("getting toggle_line_args", bufnr, row, row + 1)
 	local line = unpack(vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false))
 
-	-- TODO hey this is reeally bad, but for now this is just reading out the default config. 
-	-- the whole config situation feels bad rn. Just update the defaults if you need it different
-	local config = require('pompom').config.default
-	local item = config:create_list_item(line)
+	local item = Task.decode(line)
 	item.done = not item.done
-	vim.api.nvim_buf_set_lines(bufnr, row, row+1, false, {config.display(item)})
+	vim.api.nvim_buf_set_lines(bufnr, row, row+1, false, {item:display()})
 end
 
 
 --- @param bufnr number
 --- @return string[]
 function PomPomBuffer.get_contents(bufnr)
-	Logger:log("getting contents of bufnr", bufnr)
 	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
-	local indices = {}
+	local valid_lines = {}
 
 	for _, line in ipairs(lines) do
 		if not utils.is_whitespace(line) then
-			table.insert(indices, line)
+			table.insert(valid_lines, line)
 		end
 	end
-	return indices
+	return valid_lines
 end
 
 function PomPomBuffer.set_contents(bufnr, contents)
