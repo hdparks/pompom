@@ -93,7 +93,9 @@ function PomPomUI:open_menu(tasks)
 	end
 
 	vim.api.nvim_buf_set_lines(self.bufnr, 0,-1,false,contents)
-	vim.api.nvim_win_set_cursor(self.win_id, {#contents, #(contents[#contents])})
+	if #contents > 0 then
+		vim.api.nvim_win_set_cursor(self.win_id, {#contents, #(contents[#contents])})
+	end
 end
 
 function PomPomUI:save_contents()
@@ -106,6 +108,19 @@ function PomPomUI:save_contents()
 		end
 	end
 	require('pompom'):save_tasks(tasks)
+end
+
+--- @param index? integer
+function PomPomUI:add_new_task(index)
+	if index == nil then
+		index, _ = unpack(vim.api.nvim_win_get_cursor(self.win_id))
+	end
+	local lines = vim.api.nvim_buf_get_lines(self.bufnr, index, -1, false)
+	local new_task = Task:new()
+	table.insert(lines, 1, new_task:display())
+	vim.api.nvim_buf_set_lines(self.bufnr, index, -1, false, lines)
+	local config = require("pompom").config.task_config
+	vim.api.nvim_win_set_cursor(self.win_id, { index+1, #config.not_done_prefix })
 end
 
 return PomPomUI

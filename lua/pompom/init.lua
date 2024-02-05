@@ -39,6 +39,15 @@ function PomPom:toggle_ui()
 	end
 end
 
+
+--- @param index? integer
+function PomPom:add_task(index)
+	if self.ui.win_id == nil then
+		self:toggle_ui()
+	end
+	self.ui:add_new_task(index)
+end
+
 -- singleton pompom
 local the_pompom = PomPom:new()
 return the_pompom

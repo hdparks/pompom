@@ -11,7 +11,7 @@ PomPomTask.__index = PomPomTask
 function PomPomTask:new(text, done)
 	return setmetatable({
 		done = done or false,
-		text = text or "new task"
+		text = text or ""
 	}, self)
 end
 

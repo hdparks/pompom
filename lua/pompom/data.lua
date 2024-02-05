@@ -4,17 +4,28 @@ local Task = require("pompom.task")
 local utils = require("pompom.utils")
 
 local data_path = vim.fn.stdpath("data") .. "/pompom_data"
+-- ensure directory exists
+local data_path_dir = Path:new(data_path)
+local mkdir_result = data_path_dir:mkdir({exists_ok = true})
+Logger:log('mkdir_result: ' .. tostring(mkdir_result))
 
+--- @param list_name string
+--- @return string
 local function escape_list_name(list_name)
-	return list_name:gsub("%/","%")
+	return list_name:gsub("%/","_")
+end
+
+--- @param list_name string
+--- @return string
+local function get_path(list_name)
+	return data_path .."/".. escape_list_name(list_name) .. ".json"
 end
 
 --- @param list_name string
 --- @param data any
 local function write_data(list_name, data)
-	Logger:log("pompom.data: writing data")
-	local escaped_list_name = escape_list_name(list_name)
-	local full_data_path = data_path .. escaped_list_name .. ".json"
+	local full_data_path = get_path(list_name)
+	Logger:log("pompom.data: writing data to ".. full_data_path)
 	local path = Path:new(full_data_path)
 	local input = vim.json.encode(data)
 	path:write(input, "w")
@@ -23,11 +34,12 @@ end
 --- @param list_name string
 --- @return data any
 local function read_data(list_name)
-	local escaped_list_name = escape_list_name(list_name)
-	local full_data_path = data_path .. escaped_list_name .. ".json"
+	local full_data_path = get_path(list_name)
+	Logger:log("reading from "..full_data_path)
 
 	local file = Path:new(full_data_path)
 	if not file:exists() then
+		Logger:log("creating file" .. full_data_path)
 		write_data(list_name, {})
 	end
 	local contents = file:read()
