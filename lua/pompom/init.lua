@@ -39,6 +39,13 @@ function PomPom:toggle_ui()
 	end
 end
 
+--- @param list_name? string
+function PomPom:use_list(list_name)
+    -- here, do stuff here
+    local list = list_name or vim.loop.cwd()
+    if list == nil then return end
+    self.current_list_name = list
+end
 
 --- @param index? integer
 function PomPom:add_task(index)

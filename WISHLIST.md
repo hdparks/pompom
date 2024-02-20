@@ -1,1 +1,2 @@
-- allow walking through other pompom root lists, delete/clean
+- allow walking through other pompom root lists, select/delete
+- add nvim command line options `:PomPomList` `:PomPomSelect <list name>`
