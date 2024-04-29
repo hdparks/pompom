@@ -1,2 +1,3 @@
+- add pomodoro timer module
 - allow walking through other pompom root lists, select/delete
 - add nvim command line options `:PomPomList` `:PomPomSelect <list name>`
